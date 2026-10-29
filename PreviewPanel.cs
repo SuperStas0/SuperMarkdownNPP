@@ -66,7 +66,7 @@ namespace MarkdownPreviewPlugin
             }
             catch (Exception ex)
             {
-                error.Text = "Markdown Preview could not start WebView2.\r\n\r\n" + ex.Message +
+                error.Text = "SuperMarkdown++ could not start WebView2.\r\n\r\n" + ex.Message +
                     "\r\n\r\nInstall the Evergreen WebView2 Runtime: https://developer.microsoft.com/microsoft-edge/webview2/";
                 error.Visible = true;
                 web.Visible = false;

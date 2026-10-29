@@ -122,7 +122,7 @@ static int fail(const wchar_t *msg, int rc)
     if (rc) _snwprintf(text, 600, L"%ls\n\nCode: 0x%08X", msg, (unsigned)rc);
     else    _snwprintf(text, 600, L"%ls", msg);
     text[599] = 0;
-    MessageBoxW(NULL, text, L"Markdown Preview", MB_OK | MB_ICONERROR);
+    MessageBoxW(NULL, text, L"SuperMarkdown++", MB_OK | MB_ICONERROR);
     return 0;
 }
 
@@ -191,7 +191,7 @@ EXPORT BOOL isUnicode(void)
 
 EXPORT const wchar_t *getName(void)
 {
-    return L"Markdown Preview";
+    return L"SuperMarkdown++";
 }
 
 EXPORT void setInfo(NppData data)

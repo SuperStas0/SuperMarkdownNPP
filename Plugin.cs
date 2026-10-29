@@ -12,7 +12,7 @@ namespace MarkdownPreviewPlugin
 
     internal static class Plugin
     {
-        internal const string PluginName = "Markdown Preview";
+        internal const string PluginName = "SuperMarkdown++";
 
         static IntPtr npp, sci0, sci1;
         static IntPtr funcs, nameBuf;
@@ -23,7 +23,7 @@ namespace MarkdownPreviewPlugin
 
         // Kept in static fields so the GC never collects the native thunks.
         static readonly PluginFunc[] callbacks = { ToggleCommand, ThemeCommand };
-        static readonly string[] menuNames = { "Toggle Markdown Preview", "Toggle Light/Dark Theme" };
+        static readonly string[] menuNames = { "Toggle Preview", "Toggle Light/Dark Theme" };
 
         // ---- exports -------------------------------------------------------
 
@@ -150,7 +150,7 @@ namespace MarkdownPreviewPlugin
             tb.dlgID = 0;
             tb.uMask = Native.DWS_DF_CONT_RIGHT;
             tb.iPrevCont = -1;
-            tb.pszModuleName = Marshal.StringToHGlobalUni("MarkdownPreview.dll");
+            tb.pszModuleName = Marshal.StringToHGlobalUni("SuperMarkdown++.dll");
 
             IntPtr p = Marshal.AllocHGlobal(Marshal.SizeOf<TbData>());
             Marshal.StructureToPtr(tb, p, false);
