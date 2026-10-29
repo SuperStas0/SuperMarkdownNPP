@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace MarkdownPreviewPlugin
+namespace SuperMarkdown
 {
     // Called from the native shim (shim\shim.c) through hostfxr.
     // The shim itself exports isUnicode, getName and messageProc.

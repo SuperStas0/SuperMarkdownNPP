@@ -8,9 +8,9 @@ using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
-namespace MarkdownPreviewPlugin
+namespace SuperMarkdown
 {
-    internal sealed class PreviewPanel : UserControl
+    internal sealed class SuperMarkdownPanel : UserControl
     {
         const string Host = "md.local";
         const int WM_SHOWWINDOW = 0x0018;
@@ -24,7 +24,7 @@ namespace MarkdownPreviewPlugin
 
         public event Action BecameVisible;
 
-        public PreviewPanel(string theme)
+        public SuperMarkdownPanel(string theme)
         {
             this.theme = theme;
             BackColor = BackgroundFor(theme);
@@ -53,7 +53,7 @@ namespace MarkdownPreviewPlugin
             {
                 string userData = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "MarkdownPreview", "WebView2");
+                    "SuperMarkdown++", "WebView2");
                 CoreWebView2Environment env = await CoreWebView2Environment.CreateAsync(null, userData);
                 await web.EnsureCoreWebView2Async(env);
 

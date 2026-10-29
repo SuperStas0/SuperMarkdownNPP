@@ -1,7 +1,7 @@
 /*
  * Native Notepad++ plugin shim (MinGW-w64, x64).
  * Exports the functions Notepad++ looks for, starts the .NET runtime through
- * hostfxr, and forwards calls to MarkdownPreviewPlugin.dll (class Exports).
+ * hostfxr, and forwards calls to SuperMarkdown.dll (class Exports).
  */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -136,19 +136,19 @@ static int ensure(void)
     load_asm_fn load;
     void *ctx = NULL, *d = NULL;
     int rc;
-    const wchar_t *type = L"MarkdownPreviewPlugin.Exports, MarkdownPreviewPlugin";
+    const wchar_t *type = L"SuperMarkdown.Exports, SuperMarkdown";
     const wchar_t *uco = (const wchar_t *)(intptr_t)-1; /* UNMANAGEDCALLERSONLY_METHOD */
 
     if (g_state) return g_state > 0;
     g_state = -1;
 
     module_dir(dir);
-    _snwprintf(cfg, MAX_PATH, L"%ls\\MarkdownPreviewPlugin.runtimeconfig.json", dir);
-    _snwprintf(asmp, MAX_PATH, L"%ls\\MarkdownPreviewPlugin.dll", dir);
+    _snwprintf(cfg, MAX_PATH, L"%ls\\SuperMarkdown.runtimeconfig.json", dir);
+    _snwprintf(asmp, MAX_PATH, L"%ls\\SuperMarkdown.dll", dir);
     cfg[MAX_PATH - 1] = asmp[MAX_PATH - 1] = 0;
 
     if (GetFileAttributesW(cfg) == INVALID_FILE_ATTRIBUTES || GetFileAttributesW(asmp) == INVALID_FILE_ATTRIBUTES)
-        return fail(L"MarkdownPreviewPlugin.dll / .runtimeconfig.json missing next to the plugin DLL. "
+        return fail(L"SuperMarkdown.dll / .runtimeconfig.json missing next to the plugin DLL. "
                     L"Copy the whole build output folder.", 0);
 
     if (!find_hostfxr(fxrp))

@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
-    <AssemblyName>MarkdownPreviewPlugin</AssemblyName>
-    <RootNamespace>MarkdownPreviewPlugin</RootNamespace>
+    <AssemblyName>SuperMarkdown</AssemblyName>
+    <RootNamespace>SuperMarkdown</RootNamespace>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -13,7 +13,7 @@
     <SelfContained>false</SelfContained>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 
-    <!-- Produces MarkdownPreviewPlugin.runtimeconfig.json, used by shim\shim.c to start .NET -->
+    <!-- Produces SuperMarkdown.runtimeconfig.json, used by shim\shim.c to start .NET -->
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
 

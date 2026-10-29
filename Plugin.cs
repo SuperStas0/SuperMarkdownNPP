@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace MarkdownPreviewPlugin
+namespace SuperMarkdown
 {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate void PluginFunc();
@@ -16,14 +16,14 @@ namespace MarkdownPreviewPlugin
 
         static IntPtr npp, sci0, sci1;
         static IntPtr funcs, nameBuf;
-        static PreviewPanel panel;
+        static SuperMarkdownPanel panel;
         static System.Windows.Forms.Timer timer;
         static string theme = "dark";
         static string lastText, lastPath;
 
         // Kept in static fields so the GC never collects the native thunks.
         static readonly PluginFunc[] callbacks = { ToggleCommand, ThemeCommand };
-        static readonly string[] menuNames = { "Toggle Preview", "Toggle Light/Dark Theme" };
+        static readonly string[] menuNames = { "Toggle SuperMarkdown++", "Toggle Light/Dark Theme" };
 
         // ---- exports -------------------------------------------------------
 
@@ -138,7 +138,7 @@ namespace MarkdownPreviewPlugin
         {
             if (panel != null) return;
 
-            panel = new PreviewPanel(theme);
+            panel = new SuperMarkdownPanel(theme);
             panel.BecameVisible += delegate { Schedule(30); };
 
             timer = new System.Windows.Forms.Timer();
@@ -197,7 +197,7 @@ namespace MarkdownPreviewPlugin
             catch (Exception ex)
             {
                 lastText = null;
-                panel.ShowMessage("Preview error: " + ex.Message);
+                panel.ShowMessage("SuperMarkdown++ error: " + ex.Message);
             }
         }
 
@@ -271,7 +271,7 @@ namespace MarkdownPreviewPlugin
             {
                 return Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "MarkdownPreview", "theme.txt");
+                    "SuperMarkdown++", "theme.txt");
             }
         }
 

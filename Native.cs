@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace MarkdownPreviewPlugin
+namespace SuperMarkdown
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct NppData

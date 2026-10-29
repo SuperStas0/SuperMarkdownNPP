@@ -1,7 +1,7 @@
 using Markdig;
 using Markdig.Extensions.AutoIdentifiers;
 
-namespace MarkdownPreviewPlugin
+namespace SuperMarkdown
 {
     internal static class Renderer
     {
