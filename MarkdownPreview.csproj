@@ -9,18 +9,15 @@
     <Nullable>disable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-    <!-- x64 Notepad++. For ARM64 build with: dotnet build -c Release -r win-arm64 -->
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 
-    <!-- DNNE: generates the native MarkdownPreview.dll that Notepad++ loads -->
+    <!-- Produces MarkdownPreviewPlugin.runtimeconfig.json, used by shim\shim.c to start .NET -->
     <EnableDynamicLoading>true</EnableDynamicLoading>
-    <DnneNativeBinaryName>MarkdownPreview</DnneNativeBinaryName>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DNNE" Version="2.0.8" />
     <PackageReference Include="Markdig" Version="0.37.0" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2592.51" />
   </ItemGroup>

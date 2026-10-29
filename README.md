@@ -4,13 +4,15 @@ Dockable GitHub-style Markdown preview (dark by default). Updates while you type
 
 ## Requirements
 - Notepad++ 64-bit (check `?` > About)
-- Visual Studio Build Tools with the **Desktop development with C++** workload (DNNE compiles the native export DLL)
 - .NET 8 SDK (`global.json` pins 8.0.x) and the .NET 8 **Desktop Runtime** (x64)
+- 64-bit MinGW-w64 `gcc` on PATH (`gcc -dumpmachine` must print `x86_64-...`)
 - Microsoft Edge WebView2 Runtime (preinstalled on current Windows)
+
+No Visual Studio needed.
 
 ## Build and install
 ```
-dotnet build -c Release
+build.cmd
 install.cmd        (as Administrator, Notepad++ closed)
 ```
 Output: `bin\Release\net8.0-windows\`. Manual install = copy that whole folder to
@@ -18,6 +20,10 @@ Output: `bin\Release\net8.0-windows\`. Manual install = copy that whole folder t
 
 ## Use
 Plugins > Markdown Preview > Toggle Markdown Preview. Theme toggle is in the same menu (remembered).
+
+## How it loads
+`MarkdownPreview.dll` (C, `shim\shim.c`) is what Notepad++ loads. It starts .NET via hostfxr and calls
+`MarkdownPreviewPlugin.dll`. Startup problems show a message box.
 
 ## Notes
 - Code highlighting loads highlight.js from cdnjs; offline, code blocks render unhighlighted.
