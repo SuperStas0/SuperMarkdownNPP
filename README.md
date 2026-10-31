@@ -26,10 +26,9 @@ Plugins > SuperMarkdown++ > Toggle SuperMarkdown++ (`Ctrl+Shift+M`, changeable i
 - 64-bit MinGW-w64 `gcc` on PATH, e.g. w64devkit (`gcc -dumpmachine` prints `x86_64-...`)
 - Microsoft Edge WebView2 Runtime (preinstalled on current Windows)
 
-## Build and install
+## Build and release
 ```
-build.cmd
-install.cmd        (as Administrator, Notepad++ closed)
+build.cmd          (build only)
+release.bat        (build + create release\plugins.zip)
 ```
-Output: `bin\Release\net8.0-windows\`. Manual install = copy that whole folder to
-`C:\Program Files\Notepad++\plugins\SuperMarkdown++\` (folder name must equal the DLL name, `SuperMarkdown++`).
+Build output: `bin\Release\net8.0-windows\`. `plugins.zip` contains `plugins\SuperMarkdown++\`; extract it into the Notepad++ installation directory (folder name must equal the DLL name, `SuperMarkdown++`).
