@@ -25,6 +25,9 @@ namespace SuperMarkdown
         static readonly PluginFunc[] callbacks = { ToggleCommand, ThemeCommand };
         static readonly string[] menuNames = { "Toggle SuperMarkdown++", "Toggle Light/Dark Theme" };
 
+        // ShortcutKey: bool _isCtrl, _isAlt, _isShift; UCHAR _key. Ctrl+Alt+Shift+M for the toggle.
+        static readonly byte[][] shortcuts = { new byte[] { 1, 1, 1, 0x4D }, null };
+
         // ---- exports -------------------------------------------------------
 
         internal static void SetInfo(NppData data)
@@ -106,6 +109,13 @@ namespace SuperMarkdown
                 char[] chars = menuNames[i].ToCharArray();
                 Marshal.Copy(chars, 0, item, Math.Min(chars.Length, 63));
                 Marshal.WriteIntPtr(item, 128, Marshal.GetFunctionPointerForDelegate(callbacks[i]));
+
+                if (shortcuts[i] != null)
+                {
+                    IntPtr key = Marshal.AllocHGlobal(shortcuts[i].Length);
+                    Marshal.Copy(shortcuts[i], 0, key, shortcuts[i].Length);
+                    Marshal.WriteIntPtr(item, keyOff, key);
+                }
             }
         }
 
