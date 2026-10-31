@@ -8,7 +8,7 @@ Dockable GitHub-style Markdown viewer (dark by default). Updates while you type,
 Download `plugins.zip` from releases and extract into Notepad++ installation directory (e.g. `C:\Program Files (x86)\Notepad++`)
 
 ## Usage
-Plugins > SuperMarkdown++ > Toggle SuperMarkdown++ (`Ctrl+Alt+Shift+M`, changeable in Settings > Shortcut Mapper > Plugin commands). Theme toggle is in the same menu (remembered).
+Plugins > SuperMarkdown++ > Toggle SuperMarkdown++ (`Ctrl+Shift+M`, changeable in Settings > Shortcut Mapper > Plugin commands). Theme toggle is in the same menu (remembered).
 
 ## How it loads
 `SuperMarkdown++.dll` (C, `shim\shim.c`) is what Notepad++ loads. It starts .NET via hostfxr and calls

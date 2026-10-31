@@ -25,8 +25,8 @@ namespace SuperMarkdown
         static readonly PluginFunc[] callbacks = { ToggleCommand, ThemeCommand };
         static readonly string[] menuNames = { "Toggle SuperMarkdown++", "Toggle Light/Dark Theme" };
 
-        // ShortcutKey: bool _isCtrl, _isAlt, _isShift; UCHAR _key. Ctrl+Alt+Shift+M for the toggle.
-        static readonly byte[][] shortcuts = { new byte[] { 1, 1, 1, 0x4D }, null };
+        // ShortcutKey: bool _isCtrl, _isAlt, _isShift; UCHAR _key. Ctrl+Shift+M for the toggle.
+        static readonly byte[][] shortcuts = { new byte[] { 1, 0, 1, 0x4D }, null };
 
         // ---- exports -------------------------------------------------------
 
