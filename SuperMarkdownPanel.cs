@@ -23,6 +23,7 @@ namespace SuperMarkdown
         string dir, mappedDir;
 
         public event Action BecameVisible;
+        public event Action BecameHidden;
 
         public SuperMarkdownPanel(string theme)
         {
@@ -154,9 +155,9 @@ namespace SuperMarkdown
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
-            if (m.Msg == WM_SHOWWINDOW && m.WParam != IntPtr.Zero)
+            if (m.Msg == WM_SHOWWINDOW)
             {
-                Action h = BecameVisible;
+                Action h = m.WParam != IntPtr.Zero ? BecameVisible : BecameHidden;
                 if (h != null) h();
             }
         }

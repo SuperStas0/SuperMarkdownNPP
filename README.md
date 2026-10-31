@@ -17,7 +17,7 @@ Plugins > SuperMarkdown++ > Toggle SuperMarkdown++ (`Ctrl+Shift+M`, changeable i
 ## Notes
 - Code highlighting loads highlight.js from cdnjs; offline, code blocks render unhighlighted.
 - Relative images resolve against the file's folder. External links open in the default browser.
-- Only `.md/.markdown/.mdown/.mkd/.mkdn/.mdx/.rmd` and unsaved tabs are rendered.
+- Only `.md/.markdown/.mdown/.mkd/.mkdn/.mdx/.rmd` and unsaved tabs are rendered. On other files the panel hides itself and returns on the next Markdown tab.
 
 # Building
 ## Requirements

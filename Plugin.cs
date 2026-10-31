@@ -20,6 +20,7 @@ namespace SuperMarkdown
         static System.Windows.Forms.Timer timer;
         static string theme = "dark";
         static string lastText, lastPath;
+        static bool wanted, internalChange;
 
         // Kept in static fields so the GC never collects the native thunks.
         static readonly PluginFunc[] callbacks = { ToggleCommand, ThemeCommand };
@@ -124,9 +125,9 @@ namespace SuperMarkdown
             try
             {
                 if (panel == null) return;
-                bool visible = Native.IsWindowVisible(panel.Handle);
-                Native.SendMessage(npp, visible ? Native.NPPM_DMMHIDE : Native.NPPM_DMMSHOW, IntPtr.Zero, panel.Handle);
-                if (!visible) Schedule(1);
+                wanted = !wanted;
+                SetDock(wanted);
+                if (wanted) Schedule(1);
             }
             catch { }
         }
@@ -149,7 +150,8 @@ namespace SuperMarkdown
             if (panel != null) return;
 
             panel = new SuperMarkdownPanel(theme);
-            panel.BecameVisible += delegate { Schedule(30); };
+            panel.BecameVisible += delegate { wanted = true; Schedule(30); };
+            panel.BecameHidden += delegate { if (!internalChange) wanted = false; };
 
             timer = new System.Windows.Forms.Timer();
             timer.Tick += delegate { Refresh(); };
@@ -169,6 +171,19 @@ namespace SuperMarkdown
             panel.StartWeb();
         }
 
+        static void SetDock(bool show)
+        {
+            internalChange = true;
+            try
+            {
+                Native.SendMessage(npp, show ? Native.NPPM_DMMSHOW : Native.NPPM_DMMHIDE, IntPtr.Zero, panel.Handle);
+            }
+            finally
+            {
+                internalChange = false;
+            }
+        }
+
         static void Schedule(int ms)
         {
             if (timer == null) return;
@@ -180,21 +195,35 @@ namespace SuperMarkdown
         static void Refresh()
         {
             if (timer != null) timer.Stop();
-            if (panel == null || !Native.IsWindowVisible(panel.Handle)) return;
+            if (panel == null) return;
+
+            bool visible = Native.IsWindowVisible(panel.Handle);
+            if (visible) wanted = true;
+            if (!visible && !wanted) return;
 
             try
             {
                 string path = GetCurrentPath();
+                if (!IsMarkdown(path))
+                {
+                    if (visible)
+                    {
+                        lastText = null;
+                        SetDock(false);
+                    }
+                    return;
+                }
+
+                if (!visible)
+                {
+                    SetDock(true);
+                    return;
+                }
+
                 string text = GetText();
                 if (text == lastText && path == lastPath) return;
                 lastText = text;
                 lastPath = path;
-
-                if (!IsMarkdown(path))
-                {
-                    panel.ShowMessage("Not a Markdown file.");
-                    return;
-                }
 
                 string dir = null;
                 if (Path.IsPathRooted(path))
