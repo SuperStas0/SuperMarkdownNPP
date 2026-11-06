@@ -18,17 +18,18 @@ namespace SuperMarkdown
         readonly WebView2 web = new WebView2();
         readonly Label error = new Label();
         bool started, ready;
-        string theme;
+        string style, theme;
         string html = "";
         string dir, mappedDir;
 
         public event Action BecameVisible;
         public event Action BecameHidden;
 
-        public SuperMarkdownPanel(string theme)
+        public SuperMarkdownPanel(string style, string theme)
         {
+            this.style = style;
             this.theme = theme;
-            BackColor = BackgroundFor(theme);
+            BackColor = Styles.Background(style, theme);
 
             web.Dock = DockStyle.Fill;
             web.DefaultBackgroundColor = BackColor;
@@ -39,11 +40,6 @@ namespace SuperMarkdown
             error.Padding = new Padding(12);
             error.ForeColor = Color.Gray;
             Controls.Add(error);
-        }
-
-        static Color BackgroundFor(string t)
-        {
-            return t == "light" ? Color.White : Color.FromArgb(13, 17, 23);
         }
 
         public async void StartWeb()
@@ -63,7 +59,7 @@ namespace SuperMarkdown
                 cw.NavigationStarting += OnNavigationStarting;
                 cw.NewWindowRequested += OnNewWindowRequested;
                 cw.NavigationCompleted += OnNavigationCompleted;
-                cw.NavigateToString(Renderer.Shell(theme));
+                cw.NavigateToString(Renderer.Shell(style, theme));
             }
             catch (Exception ex)
             {
@@ -86,14 +82,15 @@ namespace SuperMarkdown
             Render("<p class=\"msg\">" + WebUtility.HtmlEncode(message) + "</p>", null);
         }
 
-        public void SetTheme(string t)
+        public void SetLook(string s, string t)
         {
+            style = s;
             theme = t;
-            BackColor = BackgroundFor(t);
+            BackColor = Styles.Background(s, t);
             try
             {
                 web.DefaultBackgroundColor = BackColor;
-                if (ready) web.CoreWebView2.ExecuteScriptAsync("setTheme('" + t + "')");
+                if (ready) web.CoreWebView2.ExecuteScriptAsync("setLook('" + s + "','" + t + "')");
             }
             catch { }
         }
@@ -120,7 +117,7 @@ namespace SuperMarkdown
         {
             // Also runs again if the user reloads the page from the context menu.
             ready = true;
-            try { web.CoreWebView2.ExecuteScriptAsync("setTheme('" + theme + "')"); } catch { }
+            try { web.CoreWebView2.ExecuteScriptAsync("setLook('" + style + "','" + theme + "')"); } catch { }
             Push();
         }
 

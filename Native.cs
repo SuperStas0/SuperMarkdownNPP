@@ -42,6 +42,7 @@ namespace SuperMarkdown
         public const uint NPPM_DMMSHOW = NPPMSG + 30;
         public const uint NPPM_DMMHIDE = NPPMSG + 31;
         public const uint NPPM_DMMREGASDCKDLG = NPPMSG + 33;
+        public const uint NPPM_SETMENUITEMCHECK = NPPMSG + 40;
         public const uint NPPM_GETFULLCURRENTPATH = WM_USER + 3000 + 1;
 
         public const uint NPPN_READY = 1001;

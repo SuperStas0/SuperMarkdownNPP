@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Check tag matches project version
+        shell: pwsh
+        run: |
+          $v = (Select-Xml -Path 'SuperMarkdown++.csproj' -XPath '//Version').Node.InnerText
+          if ("v$v" -ne $env:GITHUB_REF_NAME) { throw "Tag $env:GITHUB_REF_NAME does not match <Version> $v" }
+      - name: Build and package
+        shell: cmd
+        run: release.bat
+      - name: Publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create $env:GITHUB_REF_NAME (Get-ChildItem release/*).FullName --title $env:GITHUB_REF_NAME --generate-notes

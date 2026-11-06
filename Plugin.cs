@@ -19,15 +19,19 @@ namespace SuperMarkdown
         static SuperMarkdownPanel panel;
         static System.Windows.Forms.Timer timer;
         static string theme = "dark";
+        static string style = Styles.Default;
+        static int funcSize, cmdOffset;
         static string lastText, lastPath;
         static bool wanted, internalChange;
 
         // Kept in static fields so the GC never collects the native thunks.
-        static readonly PluginFunc[] callbacks = { ToggleCommand, ThemeCommand };
-        static readonly string[] menuNames = { "Toggle SuperMarkdown++", "Toggle Light/Dark Theme" };
+        // A null callback makes Notepad++ draw a separator. The style items start at StyleFirst, in Styles.Names order.
+        const int StyleFirst = 3;
+        static readonly PluginFunc[] callbacks = { ToggleCommand, ThemeCommand, null, StyleGitHubCommand, StyleGitLabCommand, StyleForgejoCommand };
+        static readonly string[] menuNames = { "Toggle SuperMarkdown++", "Toggle Light/Dark Theme", "-", "GitHub Style", "GitLab Style", "Forgejo Style" };
 
         // ShortcutKey: bool _isCtrl, _isAlt, _isShift; UCHAR _key. Ctrl+Shift+M for the toggle.
-        static readonly byte[][] shortcuts = { new byte[] { 1, 0, 1, 0x4D }, null };
+        static readonly byte[][] shortcuts = { new byte[] { 1, 0, 1, 0x4D }, null, null, null, null, null };
 
         // ---- exports -------------------------------------------------------
 
@@ -42,6 +46,7 @@ namespace SuperMarkdown
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             theme = Settings.LoadTheme();
+            style = Settings.LoadStyle();
             BuildMenu();
         }
 
@@ -99,6 +104,8 @@ namespace SuperMarkdown
             int chkOff = cmdOff + 4;
             int keyOff = Align(chkOff + 1, ptr);
             int size = Align(keyOff + ptr, ptr);
+            funcSize = size;
+            cmdOffset = cmdOff;
 
             int total = size * menuNames.Length;
             funcs = Marshal.AllocHGlobal(total);
@@ -109,7 +116,11 @@ namespace SuperMarkdown
                 IntPtr item = IntPtr.Add(funcs, i * size);
                 char[] chars = menuNames[i].ToCharArray();
                 Marshal.Copy(chars, 0, item, Math.Min(chars.Length, 63));
-                Marshal.WriteIntPtr(item, 128, Marshal.GetFunctionPointerForDelegate(callbacks[i]));
+                if (callbacks[i] != null)
+                    Marshal.WriteIntPtr(item, 128, Marshal.GetFunctionPointerForDelegate(callbacks[i]));
+
+                if (i >= StyleFirst && i - StyleFirst == Styles.IndexOf(style))
+                    Marshal.WriteByte(item, chkOff, 1);
 
                 if (shortcuts[i] != null)
                 {
@@ -138,7 +149,31 @@ namespace SuperMarkdown
             {
                 theme = theme == "dark" ? "light" : "dark";
                 Settings.SaveTheme(theme);
-                if (panel != null) panel.SetTheme(theme);
+                if (panel != null) panel.SetLook(style, theme);
+            }
+            catch { }
+        }
+
+        static void StyleGitHubCommand() { SetStyle("github"); }
+
+        static void StyleGitLabCommand() { SetStyle("gitlab"); }
+
+        static void StyleForgejoCommand() { SetStyle("forgejo"); }
+
+        static void SetStyle(string s)
+        {
+            try
+            {
+                style = Styles.Normalize(s);
+                Settings.SaveStyle(style);
+                if (panel != null) panel.SetLook(style, theme);
+
+                // Notepad++ assigns each item's command ID after getFuncsArray.
+                for (int k = 0; k < Styles.Names.Length; k++)
+                {
+                    int id = Marshal.ReadInt32(funcs, (StyleFirst + k) * funcSize + cmdOffset);
+                    Native.SendMessage(npp, Native.NPPM_SETMENUITEMCHECK, (IntPtr)id, (IntPtr)(Styles.Names[k] == style ? 1 : 0));
+                }
             }
             catch { }
         }
@@ -149,7 +184,7 @@ namespace SuperMarkdown
         {
             if (panel != null) return;
 
-            panel = new SuperMarkdownPanel(theme);
+            panel = new SuperMarkdownPanel(style, theme);
             panel.BecameVisible += delegate { wanted = true; Schedule(30); };
             panel.BecameHidden += delegate { if (!internalChange) wanted = false; };
 
@@ -304,34 +339,53 @@ namespace SuperMarkdown
 
     internal static class Settings
     {
-        static string FilePath
+        static string FilePathFor(string name)
         {
-            get
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "SuperMarkdown++", name);
+        }
+
+        static string Load(string name)
+        {
+            try
             {
-                return Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "SuperMarkdown++", "theme.txt");
+                string path = FilePathFor(name);
+                if (File.Exists(path)) return File.ReadAllText(path).Trim();
             }
+            catch { }
+            return "";
+        }
+
+        static void Save(string name, string value)
+        {
+            try
+            {
+                string path = FilePathFor(name);
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                File.WriteAllText(path, value);
+            }
+            catch { }
         }
 
         public static string LoadTheme()
         {
-            try
-            {
-                if (File.Exists(FilePath) && File.ReadAllText(FilePath).Trim() == "light") return "light";
-            }
-            catch { }
-            return "dark";
+            return Load("theme.txt") == "light" ? "light" : "dark";
         }
 
         public static void SaveTheme(string theme)
         {
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
-                File.WriteAllText(FilePath, theme);
-            }
-            catch { }
+            Save("theme.txt", theme);
+        }
+
+        public static string LoadStyle()
+        {
+            return Styles.Normalize(Load("style.txt"));
+        }
+
+        public static void SaveStyle(string style)
+        {
+            Save("style.txt", style);
         }
     }
 }
