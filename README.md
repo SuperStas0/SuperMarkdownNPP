@@ -46,11 +46,8 @@ GitLab and Forgejo are approximations built from their public stylesheets. They 
 ## Build and release
 ```
 build.cmd          (build only)
+install.bat        (build + copy into Notepad++\plugins\SuperMarkdown++, Notepad++ must be closed)
 release.bat        (build + create release\SuperMarkdown-vX.Y.Z-x64.zip and release\SHA256SUMS.txt)
 ```
+`install.bat` looks in `%NPP_DIR%`, `%ProgramFiles%\Notepad++` and `%ProgramFiles(x86)%\Notepad++`. Run it as administrator when Notepad++ is under Program Files.
 Build output: `bin\Release\net8.0-windows\`. The version comes from `<Version>` in `SuperMarkdown++.csproj`. The zip contains `plugins\SuperMarkdown++\` (folder name must equal the DLL name, `SuperMarkdown++`).
-
-## CI
-Pushing a tag `vX.Y.Z` (must equal `<Version>`) builds and publishes a release with the zip:
-- GitHub: `.github/workflows/build.yml` (every push/PR) and `release.yml` (tags)
-- GitLab: `.gitlab-ci.yml` (needs a Windows runner)
