@@ -13,9 +13,9 @@ if not defined REST goto badflags
 if not "%REST:c=%"=="%REST%" set "CLEAN=1"
 if not "%REST:i=%"=="%REST%" set "INSTALL=1"
 if not "%REST:r=%"=="%REST%" set "RELEASE=1"
-set "REST=%REST:c=%"
-set "REST=%REST:i=%"
-set "REST=%REST:r=%"
+if defined REST set "REST=%REST:c=%"
+if defined REST set "REST=%REST:i=%"
+if defined REST set "REST=%REST:r=%"
 if defined REST goto badflags
 :flagsdone
 
