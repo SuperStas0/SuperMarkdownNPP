@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -17,21 +19,28 @@ namespace SuperMarkdown
         static IntPtr npp, sci0, sci1;
         static IntPtr funcs, nameBuf;
         static SuperMarkdownPanel panel;
+        static Overlay overlay;
         static System.Windows.Forms.Timer timer;
         static string theme = "dark";
         static string style = Styles.Default;
+        static string mode = Modes.Hidden;
+        static string shown = Modes.Sidebar;
         static int funcSize, cmdOffset;
         static string lastText, lastPath;
-        static bool wanted, internalChange;
+        static bool internalChange, closing;
+        static string lastCmd;
+        static int lastCmdTick;
 
         // Kept in static fields so the GC never collects the native thunks.
-        // A null callback makes Notepad++ draw a separator. The style items start at StyleFirst, in Styles.Names order.
-        const int StyleFirst = 3;
-        static readonly PluginFunc[] callbacks = { ToggleCommand, ThemeCommand, null, StyleGitHubCommand, StyleGitLabCommand, StyleForgejoCommand };
-        static readonly string[] menuNames = { "Toggle SuperMarkdown++", "Toggle Light/Dark Theme", "-", "GitHub Style", "GitLab Style", "Forgejo Style" };
+        // A null callback makes Notepad++ draw a separator. The mode items start at ModeFirst (Modes.Names order), the style items at StyleFirst (Styles.Names order).
+        const int ModeFirst = 2;
+        const int StyleFirst = 9;
+        static readonly PluginFunc[] callbacks = { ToggleCommand, null, HiddenCommand, SidebarCommand, ReplaceCommand, null, ThemeCommand, NextStyleCommand, null, StyleGitHubCommand, StyleGitLabCommand, StyleForgejoCommand };
+        static readonly string[] menuNames = { "Toggle SuperMarkdown++", "-", "Hidden", "Sidebar", "Replace Editor", "-", "Toggle Light/Dark Theme", "Next Style", "-", "GitHub Style", "GitLab Style", "Forgejo Style" };
 
         // ShortcutKey: bool _isCtrl, _isAlt, _isShift; UCHAR _key. Ctrl+Shift+M for the toggle.
-        static readonly byte[][] shortcuts = { new byte[] { 1, 0, 1, 0x4D }, null, null, null, null, null };
+        // Ctrl+Alt+Shift + Left/Right/Up/Down/PageDown for the rest: Ctrl+Shift+arrows are Notepad++'s own move-line and select-word keys.
+        static readonly byte[][] shortcuts = { new byte[] { 1, 0, 1, 0x4D }, null, new byte[] { 1, 1, 1, 0x25 }, new byte[] { 1, 1, 1, 0x27 }, new byte[] { 1, 1, 1, 0x26 }, null, new byte[] { 1, 1, 1, 0x28 }, new byte[] { 1, 1, 1, 0x22 }, null, null, null, null };
 
         // ---- exports -------------------------------------------------------
 
@@ -47,6 +56,7 @@ namespace SuperMarkdown
 
             theme = Settings.LoadTheme();
             style = Settings.LoadStyle();
+            shown = Settings.LoadShown();
             BuildMenu();
         }
 
@@ -81,6 +91,7 @@ namespace SuperMarkdown
                     Schedule(100);
                     break;
                 case Native.NPPN_SHUTDOWN:
+                    closing = true;
                     if (timer != null) timer.Stop();
                     break;
                 case Native.SCN_MODIFIED:
@@ -119,6 +130,9 @@ namespace SuperMarkdown
                 if (callbacks[i] != null)
                     Marshal.WriteIntPtr(item, 128, Marshal.GetFunctionPointerForDelegate(callbacks[i]));
 
+                if (i >= ModeFirst && i - ModeFirst == Array.IndexOf(Modes.Names, mode))
+                    Marshal.WriteByte(item, chkOff, 1);
+
                 if (i >= StyleFirst && i - StyleFirst == Styles.IndexOf(style))
                     Marshal.WriteByte(item, chkOff, 1);
 
@@ -131,27 +145,87 @@ namespace SuperMarkdown
             }
         }
 
+        // The panel runs the same shortcuts through the page, so one key press can arrive twice.
+        static bool Repeat(string name)
+        {
+            int now = Environment.TickCount;
+            bool again = name == lastCmd && unchecked(now - lastCmdTick) < 200;
+            lastCmd = name;
+            lastCmdTick = now;
+            return again;
+        }
+
+        static string KeysJson()
+        {
+            List<int[]> keys = new List<int[]>();
+            for (int i = 0; i < shortcuts.Length; i++)
+            {
+                byte[] k = shortcuts[i];
+                if (k != null) keys.Add(new int[] { k[0], k[1], k[2], k[3], i });
+            }
+            return JsonSerializer.Serialize(keys);
+        }
+
+        static void RunCommand(int index)
+        {
+            if (index < 0 || index >= callbacks.Length || callbacks[index] == null) return;
+            callbacks[index]();
+        }
+
         static void ToggleCommand()
+        {
+            if (Repeat("toggle")) return;
+            SetMode(mode == Modes.Hidden ? shown : Modes.Hidden);
+        }
+
+        static void HiddenCommand() { SetMode(Modes.Hidden); }
+
+        static void SidebarCommand() { SetMode(Modes.Sidebar); }
+
+        static void ReplaceCommand() { SetMode(Modes.Replace); }
+
+        static void SetMode(string m)
         {
             try
             {
                 if (panel == null) return;
-                wanted = !wanted;
-                SetDock(wanted);
-                if (wanted) Schedule(1);
+                mode = Modes.Normalize(m);
+                if (mode != Modes.Hidden) shown = mode;
+                Settings.SaveMode(mode);
+                Settings.SaveShown(shown);
+                CheckModes();
+                lastText = null;
+                Refresh(true);
             }
             catch { }
+        }
+
+        static void CheckModes()
+        {
+            for (int k = 0; k < Modes.Names.Length; k++)
+            {
+                int id = Marshal.ReadInt32(funcs, (ModeFirst + k) * funcSize + cmdOffset);
+                Native.SendMessage(npp, Native.NPPM_SETMENUITEMCHECK, (IntPtr)id, (IntPtr)(Modes.Names[k] == mode ? 1 : 0));
+            }
         }
 
         static void ThemeCommand()
         {
             try
             {
+                if (Repeat("theme")) return;
                 theme = theme == "dark" ? "light" : "dark";
                 Settings.SaveTheme(theme);
                 if (panel != null) panel.SetLook(style, theme);
+                if (overlay != null) overlay.Panel.SetLook(style, theme);
             }
             catch { }
+        }
+
+        static void NextStyleCommand()
+        {
+            if (Repeat("style")) return;
+            SetStyle(Styles.Names[(Styles.IndexOf(style) + 1) % Styles.Names.Length]);
         }
 
         static void StyleGitHubCommand() { SetStyle("github"); }
@@ -167,6 +241,7 @@ namespace SuperMarkdown
                 style = Styles.Normalize(s);
                 Settings.SaveStyle(style);
                 if (panel != null) panel.SetLook(style, theme);
+                if (overlay != null) overlay.Panel.SetLook(style, theme);
 
                 // Notepad++ assigns each item's command ID after getFuncsArray.
                 for (int k = 0; k < Styles.Names.Length; k++)
@@ -185,11 +260,13 @@ namespace SuperMarkdown
             if (panel != null) return;
 
             panel = new SuperMarkdownPanel(style, theme);
-            panel.BecameVisible += delegate { wanted = true; Schedule(30); };
-            panel.BecameHidden += delegate { if (!internalChange) wanted = false; };
+            panel.SetKeys(KeysJson());
+            panel.Command += RunCommand;
+            panel.BecameVisible += SidebarShown;
+            panel.BecameHidden += SidebarHidden;
 
             timer = new System.Windows.Forms.Timer();
-            timer.Tick += delegate { Refresh(); };
+            timer.Tick += delegate { Refresh(false); };
 
             var tb = new TbData();
             tb.hClient = panel.Handle; // forces handle creation
@@ -204,6 +281,49 @@ namespace SuperMarkdown
             Native.SendMessage(npp, Native.NPPM_DMMREGASDCKDLG, IntPtr.Zero, p);
 
             panel.StartWeb();
+
+            // The sidebar restores itself; Replace Editor is ours to restore.
+            if (Settings.LoadMode() == Modes.Replace) SetMode(Modes.Replace);
+        }
+
+        // Notepad++ shows or hides the sidebar on its own (menu, close button, restored layout).
+        static void SidebarShown()
+        {
+            if (!internalChange && !closing && mode != Modes.Sidebar)
+            {
+                mode = shown = Modes.Sidebar;
+                Settings.SaveMode(mode);
+                Settings.SaveShown(shown);
+                CheckModes();
+                if (overlay != null) overlay.Hide();
+            }
+            Schedule(30);
+        }
+
+        static void SidebarHidden()
+        {
+            if (internalChange || closing || mode != Modes.Sidebar) return;
+            mode = Modes.Hidden;
+            Settings.SaveMode(mode);
+            CheckModes();
+        }
+
+        static void ShowOverlay(bool focus)
+        {
+            if (overlay == null)
+            {
+                SuperMarkdownPanel p = new SuperMarkdownPanel(style, theme);
+                p.SetKeys(KeysJson());
+                p.Command += RunCommand;
+                overlay = new Overlay(p);
+            }
+            overlay.Show(CurrentScintilla(), focus);
+            overlay.Panel.StartWeb();
+        }
+
+        static SuperMarkdownPanel ActivePanel()
+        {
+            return mode == Modes.Replace && overlay != null ? overlay.Panel : panel;
         }
 
         static void SetDock(bool show)
@@ -227,33 +347,40 @@ namespace SuperMarkdown
             timer.Start();
         }
 
-        static void Refresh()
+        // Brings the sidebar and the overlay in line with the mode and the current tab, then renders.
+        static void Refresh(bool focus)
         {
             if (timer != null) timer.Stop();
             if (panel == null) return;
 
-            bool visible = Native.IsWindowVisible(panel.Handle);
-            if (visible) wanted = true;
-            if (!visible && !wanted) return;
+            bool sideNow = Native.IsWindowVisible(panel.Handle);
+            bool overNow = overlay != null && overlay.Shown;
+            if (mode == Modes.Hidden && !sideNow && !overNow) return;
 
             try
             {
                 string path = GetCurrentPath();
-                if (!IsMarkdown(path))
+                bool md = mode != Modes.Hidden && IsMarkdown(path);
+                bool side = md && mode == Modes.Sidebar;
+                bool over = md && mode == Modes.Replace;
+
+                if (sideNow && !side) SetDock(false);
+                if (overNow && !over) overlay.Hide();
+
+                if (!md)
                 {
-                    if (visible)
-                    {
-                        lastText = null;
-                        SetDock(false);
-                    }
+                    lastText = null;
+                    if (focus) Native.SetFocus(CurrentScintilla());
                     return;
                 }
 
-                if (!visible)
+                if (side && !sideNow)
                 {
                     SetDock(true);
                     return;
                 }
+
+                if (over) ShowOverlay(focus);
 
                 string text = GetText();
                 if (text == lastText && path == lastPath) return;
@@ -266,12 +393,12 @@ namespace SuperMarkdown
                     string d = Path.GetDirectoryName(path);
                     if (d != null && Directory.Exists(d)) dir = d;
                 }
-                panel.Render(Renderer.ToHtml(text), dir);
+                ActivePanel().Render(Renderer.ToHtml(text), dir, Path.GetFileName(path));
             }
             catch (Exception ex)
             {
                 lastText = null;
-                panel.ShowMessage("SuperMarkdown++ error: " + ex.Message);
+                ActivePanel().ShowMessage("SuperMarkdown++ error: " + ex.Message);
             }
         }
 
@@ -386,6 +513,28 @@ namespace SuperMarkdown
         public static void SaveStyle(string style)
         {
             Save("style.txt", style);
+        }
+
+        public static string LoadMode()
+        {
+            return Modes.Normalize(Load("mode.txt"));
+        }
+
+        public static void SaveMode(string mode)
+        {
+            Save("mode.txt", mode);
+        }
+
+        // Last visible mode, what the toggle brings back.
+        public static string LoadShown()
+        {
+            string s = Modes.Normalize(Load("shown.txt"));
+            return s == Modes.Hidden ? Modes.Sidebar : s;
+        }
+
+        public static void SaveShown(string mode)
+        {
+            Save("shown.txt", mode);
         }
     }
 }

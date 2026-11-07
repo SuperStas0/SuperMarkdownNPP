@@ -32,7 +32,7 @@ namespace SuperMarkdown
             switch (Normalize(style))
             {
                 case "gitlab": return Color.FromArgb(31, 30, 36);
-                case "forgejo": return Color.FromArgb(22, 23, 24);
+                case "forgejo": return Color.FromArgb(30, 31, 32);
                 default: return Color.FromArgb(13, 17, 23);
             }
         }

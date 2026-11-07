@@ -12,20 +12,31 @@ Plugins > SuperMarkdown++:
 
 | Item | Action |
 | --- | --- |
-| Toggle SuperMarkdown++ | Show/hide the panel (`Ctrl+Shift+M`, changeable in Settings > Shortcut Mapper > Plugin commands) |
-| Toggle Light/Dark Theme | Switch between dark and light |
+| Toggle SuperMarkdown++ | Hide, or show again in the last used mode (`Ctrl+Shift+M`) |
+| Hidden / Sidebar / Replace Editor | Switch the view mode (`Ctrl+Alt+Shift+Left` / `Right` / `Up`) |
+| Toggle Light/Dark Theme | Switch between dark and light (`Ctrl+Alt+Shift+Down`) |
+| Next Style | Cycle GitHub, GitLab, Forgejo (`Ctrl+Alt+Shift+PageDown`) |
 | GitHub Style / GitLab Style / Forgejo Style | Switch the rendering style (the active one is checked) |
 
-Theme and style apply instantly and are remembered in `%LOCALAPPDATA%\SuperMarkdown++\` (`theme.txt`, `style.txt`).
+Shortcuts are changeable in Settings > Shortcut Mapper > Plugin commands. They also work while the viewer has focus, with the default keys only. `Ctrl+Shift+arrows` are not used: Notepad++ uses them for moving lines and selecting words.
+
+Mode, theme and style apply instantly and are remembered in `%LOCALAPPDATA%\SuperMarkdown++\` (`mode.txt`, `shown.txt`, `theme.txt`, `style.txt`).
+
+## View modes
+| Mode | Notes |
+| --- | --- |
+| Hidden | Editor only |
+| Sidebar | Docked panel, can be dragged to any side |
+| Replace Editor | Viewer covers the text of the active view. The tab bar stays usable. Switch to Hidden or Sidebar to edit |
 
 ## Styles
 | Style | Notes |
 | --- | --- |
 | GitHub | Default |
 | GitLab | GitLab-like fonts, headings, tables, code blocks |
-| Forgejo | Forgejo/Gitea-like colors and markup |
+| Forgejo | Forgejo/Gitea markup: README box with file header, heading anchors, code copy button, attention-style alerts |
 
-GitLab and Forgejo are approximations built from their public stylesheets. They are not pixel-exact, and the Forgejo colors are taken from Gitea's themes.
+GitLab and Forgejo are approximations built from their public stylesheets. They are not pixel-exact, and the Forgejo CSS and colors are ported from Gitea, not from Forgejo's own source.
 
 ## How it loads
 `SuperMarkdown++.dll` (C, `shim\shim.c`) is what Notepad++ loads. It starts .NET via hostfxr and calls
@@ -41,7 +52,7 @@ GitLab and Forgejo are approximations built from their public stylesheets. They 
 - Notepad++ 64-bit
 - .NET 8 SDK (`global.json` pins 8.0.x) and the .NET 8 **Desktop Runtime** (x64)
 - 64-bit MinGW-w64 `gcc` on PATH, e.g. w64devkit (`gcc -dumpmachine` prints `x86_64-...`). If it is not on PATH, `build.cmd` also looks in `%W64DEVKIT%`, `C:\w64devkit` and your user folders.
-- Microsoft Edge WebView2 Runtime (preinstalled on current Windows)
+- Microsoft Edge WebView2 Runtime, version 120 or newer (preinstalled and auto-updated on current Windows)
 
 ## Build and release
 ```

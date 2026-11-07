@@ -20,10 +20,12 @@ namespace SuperMarkdown
         bool started, ready;
         string style, theme;
         string html = "";
+        string name, keys = "[]";
         string dir, mappedDir;
 
         public event Action BecameVisible;
         public event Action BecameHidden;
+        public event Action<int> Command;
 
         public SuperMarkdownPanel(string style, string theme)
         {
@@ -59,6 +61,7 @@ namespace SuperMarkdown
                 cw.NavigationStarting += OnNavigationStarting;
                 cw.NewWindowRequested += OnNewWindowRequested;
                 cw.NavigationCompleted += OnNavigationCompleted;
+                cw.WebMessageReceived += OnWebMessage;
                 cw.NavigateToString(Renderer.Shell(style, theme));
             }
             catch (Exception ex)
@@ -70,16 +73,30 @@ namespace SuperMarkdown
             }
         }
 
-        public void Render(string bodyHtml, string baseDir)
+        public void Render(string bodyHtml, string baseDir, string fileName)
         {
             html = bodyHtml;
             dir = baseDir;
+            name = fileName;
             Push();
         }
 
         public void ShowMessage(string message)
         {
-            Render("<p class=\"msg\">" + WebUtility.HtmlEncode(message) + "</p>", null);
+            Render("<p class=\"msg\">" + WebUtility.HtmlEncode(message) + "</p>", null, null);
+        }
+
+        // JSON array of [ctrl, alt, shift, virtual key, menu index]; lets the page run the same shortcuts while it has focus.
+        public void SetKeys(string json)
+        {
+            keys = json;
+            if (!ready) return;
+            try { web.CoreWebView2.ExecuteScriptAsync("setKeys(" + keys + ")"); } catch { }
+        }
+
+        public void FocusWeb()
+        {
+            web.Focus();
         }
 
         public void SetLook(string s, string t)
@@ -108,7 +125,7 @@ namespace SuperMarkdown
                         cw.SetVirtualHostNameToFolderMapping(Host, dir, CoreWebView2HostResourceAccessKind.Allow);
                     mappedDir = dir;
                 }
-                cw.ExecuteScriptAsync("setContent(" + JsonSerializer.Serialize(html) + ")");
+                cw.ExecuteScriptAsync("setContent(" + JsonSerializer.Serialize(html) + "," + JsonSerializer.Serialize(name) + ")");
             }
             catch { }
         }
@@ -118,7 +135,24 @@ namespace SuperMarkdown
             // Also runs again if the user reloads the page from the context menu.
             ready = true;
             try { web.CoreWebView2.ExecuteScriptAsync("setLook('" + style + "','" + theme + "')"); } catch { }
+            try { web.CoreWebView2.ExecuteScriptAsync("setKeys(" + keys + ")"); } catch { }
             Push();
+        }
+
+        void OnWebMessage(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            int index;
+            try
+            {
+                if (!int.TryParse(e.TryGetWebMessageAsString(), out index)) return;
+            }
+            catch
+            {
+                return;
+            }
+
+            Action<int> h = Command;
+            if (h != null) h(index);
         }
 
         void OnNavigationStarting(object sender, CoreWebView2NavigationStartingEventArgs e)
