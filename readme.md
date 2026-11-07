@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="showcase.png" alt=""/>
+  <img src="showcase.png" alt="Showcase"/>
 </p>
 
 # SuperMarkdown++
