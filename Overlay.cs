@@ -3,7 +3,6 @@ using System.Windows.Forms;
 
 namespace SuperMarkdown
 {
-    // Hosts a panel as a child of a Scintilla view: it covers the text, not the tab bar.
     internal sealed class Overlay
     {
         readonly SuperMarkdownPanel panel;

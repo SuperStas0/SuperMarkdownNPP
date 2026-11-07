@@ -74,7 +74,6 @@ __CSS__
   function list(root, sel) {
     return Array.prototype.slice.call(root.querySelectorAll(sel));
   }
-  // Forgejo markup: attention blocks, heading anchors and code blocks with a copy button.
   function decorate(root) {
     list(root, '.markdown-alert').forEach(function (a) {
       var m = /markdown-alert-(note|tip|important|warning|caution)/.exec(a.className);

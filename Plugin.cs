@@ -347,7 +347,6 @@ namespace SuperMarkdown
             timer.Start();
         }
 
-        // Brings the sidebar and the overlay in line with the mode and the current tab, then renders.
         static void Refresh(bool focus)
         {
             if (timer != null) timer.Stop();
@@ -525,7 +524,6 @@ namespace SuperMarkdown
             Save("mode.txt", mode);
         }
 
-        // Last visible mode, what the toggle brings back.
         public static string LoadShown()
         {
             string s = Modes.Normalize(Load("shown.txt"));

@@ -51,14 +51,24 @@ GitLab and Forgejo are approximations built from their public stylesheets. They 
 ## Requirements
 - Notepad++ 64-bit
 - .NET 8 SDK (`global.json` pins 8.0.x) and the .NET 8 **Desktop Runtime** (x64)
-- 64-bit MinGW-w64 `gcc` on PATH, e.g. w64devkit (`gcc -dumpmachine` prints `x86_64-...`). If it is not on PATH, `build.cmd` also looks in `%W64DEVKIT%`, `C:\w64devkit` and your user folders.
+- 64-bit MinGW-w64 `gcc` on PATH, e.g. w64devkit (`gcc -dumpmachine` prints `x86_64-...`). If it is not on PATH, `build.bat` also looks in `%W64DEVKIT%`, `C:\w64devkit` and your user folders.
 - Microsoft Edge WebView2 Runtime, version 120 or newer (preinstalled and auto-updated on current Windows)
 
-## Build and release
+## Build script
 ```
-build.cmd          (build only)
-install.bat        (build + copy into Notepad++\plugins\SuperMarkdown++, Notepad++ must be closed)
-release.bat        (build + create release\SuperMarkdown-vX.Y.Z-x64.zip and release\SHA256SUMS.txt)
+build.bat [-cir]
 ```
-`install.bat` looks in `%NPP_DIR%`, `%ProgramFiles%\Notepad++` and `%ProgramFiles(x86)%\Notepad++`. Run it as administrator when Notepad++ is under Program Files.
+| Flag | Action |
+| --- | --- |
+| `-c` | Clean: delete `bin` and `obj` first |
+| `-i` | Install: copy the build into `Notepad++\plugins\SuperMarkdown++` (Notepad++ must be closed) |
+| `-r` | Release: create `release\SuperMarkdown-vX.Y.Z-x64.zip` and `release\SHA256SUMS.txt` |
+
+Flags combine, e.g. `build.bat -cir`. No flags builds only.
+`-i` looks in `%NPP_DIR%`, `%ProgramFiles%\Notepad++` and `%ProgramFiles(x86)%\Notepad++`. Run it as administrator when Notepad++ is under Program Files.
 Build output: `bin\Release\net8.0-windows\`. The version comes from `<Version>` in `SuperMarkdown++.csproj`. The zip contains `plugins\SuperMarkdown++\` (folder name must equal the DLL name, `SuperMarkdown++`).
+
+# License
+MIT
+
+Third-party: Markdig (BSD-2-Clause), Microsoft.Web.WebView2
