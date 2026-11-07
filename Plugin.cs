@@ -27,6 +27,7 @@ namespace SuperMarkdown
         static string shown = Modes.Sidebar;
         static int funcSize, cmdOffset;
         static string lastText, lastPath;
+        static string pendingPath, pendingFragment;
         static bool internalChange, closing;
         static string lastCmd;
         static int lastCmdTick;
@@ -176,6 +177,43 @@ namespace SuperMarkdown
             callbacks[index]();
         }
 
+        // A relative link in the page: open the file in Notepad++ (never run it); the panel then renders it like any other tab.
+        static void OpenLink(string href)
+        {
+            try
+            {
+                string current = GetCurrentPath();
+                if (!Path.IsPathRooted(current)) return;
+
+                string anchor = "";
+                int cut = href.IndexOf('#');
+                if (cut >= 0)
+                {
+                    anchor = href.Substring(cut + 1);
+                    href = href.Substring(0, cut);
+                }
+                cut = href.IndexOf('?');
+                if (cut >= 0) href = href.Substring(0, cut);
+
+                string relative = Uri.UnescapeDataString(href).Replace('/', '\\');
+                if (relative.Length == 0 || Path.IsPathRooted(relative)) return;
+
+                string target = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(current), relative));
+                if (!File.Exists(target)) return;
+
+                if (string.Equals(target, current, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (anchor.Length > 0) ActivePanel().ScrollTo(anchor);
+                    return;
+                }
+
+                pendingPath = IsMarkdown(target) && anchor.Length > 0 ? target : null;
+                pendingFragment = anchor;
+                Native.SendMessage(npp, Native.NPPM_DOOPEN, IntPtr.Zero, target);
+            }
+            catch { }
+        }
+
         static void ToggleCommand()
         {
             if (Repeat("toggle")) return;
@@ -287,6 +325,7 @@ namespace SuperMarkdown
             panel = new SuperMarkdownPanel(style, theme);
             panel.SetKeys(KeysJson());
             panel.Command += RunCommand;
+            panel.Link += OpenLink;
             panel.BecameVisible += SidebarShown;
             panel.BecameHidden += SidebarHidden;
 
@@ -340,6 +379,7 @@ namespace SuperMarkdown
                 SuperMarkdownPanel p = new SuperMarkdownPanel(style, theme);
                 p.SetKeys(KeysJson());
                 p.Command += RunCommand;
+                p.Link += OpenLink;
                 overlay = new Overlay(p);
             }
             overlay.Show(CurrentScintilla(), focus);
@@ -417,7 +457,13 @@ namespace SuperMarkdown
                     string d = Path.GetDirectoryName(path);
                     if (d != null && Directory.Exists(d)) dir = d;
                 }
-                ActivePanel().Render(Renderer.ToHtml(text), dir, Path.GetFileName(path));
+                string anchor = null;
+                if (pendingPath != null && string.Equals(path, pendingPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    anchor = pendingFragment;
+                    pendingPath = pendingFragment = null;
+                }
+                ActivePanel().Render(Renderer.ToHtml(text), dir, Path.GetFileName(path), anchor);
             }
             catch (Exception ex)
             {

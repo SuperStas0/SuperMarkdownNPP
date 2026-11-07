@@ -2,22 +2,23 @@
 setlocal
 cd /d "%~dp0"
 
-set "FLAGS=%~1"
+set "ROOT=%~dp0"
+set "OUT=bin\Release\net8.0-windows"
 set "CLEAN="
 set "INSTALL="
 set "RELEASE="
-if not defined FLAGS goto flagsdone
-if not "%FLAGS:~0,1%"=="-" goto badflags
-set "REST=%FLAGS:~1%"
-if not defined REST goto badflags
-if not "%REST:c=%"=="%REST%" set "CLEAN=1"
-if not "%REST:i=%"=="%REST%" set "INSTALL=1"
-if not "%REST:r=%"=="%REST%" set "RELEASE=1"
-if defined REST set "REST=%REST:c=%"
-if defined REST set "REST=%REST:i=%"
-if defined REST set "REST=%REST:r=%"
-if defined REST goto badflags
-:flagsdone
+set "HELP="
+set "BAD="
+
+:args
+if "%~1"=="" goto argsdone
+call :flag "%~1"
+shift
+goto args
+:argsdone
+
+if defined HELP goto help
+if defined BAD (echo ERROR: unknown flag. Run build.bat -h for usage.& exit /b 1)
 
 where gcc >nul 2>&1 && goto havegcc
 for %%D in ("%W64DEVKIT%" "C:\w64devkit" "%USERPROFILE%\w64devkit" "%USERPROFILE%\Downloads\w64devkit" "%USERPROFILE%\Desktop\w64devkit") do if exist "%%~D\bin\gcc.exe" set "PATH=%%~D\bin;%PATH%"
@@ -35,7 +36,6 @@ if defined CLEAN (
 
 dotnet build -c Release -nologo || exit /b 1
 
-set "OUT=bin\Release\net8.0-windows"
 if not exist "%OUT%\SuperMarkdown.dll" (echo ERROR: SuperMarkdown.dll was not produced.& exit /b 1)
 gcc -shared -O2 -s -o "%OUT%\SuperMarkdown++.dll" shim\shim.c -ladvapi32 -luser32 || exit /b 1
 echo Built %OUT%\SuperMarkdown++.dll
@@ -44,11 +44,43 @@ if defined INSTALL call :install || exit /b 1
 if defined RELEASE call :release || exit /b 1
 exit /b 0
 
-:install
+:flag
+set "A=%~1"
+set "REST=%A:~1%"
+if not "%A:~0,1%"=="-" set "REST=?"
+if not defined REST set "REST=?"
+if not "%REST:c=%"=="%REST%" set "CLEAN=1"
+if not "%REST:i=%"=="%REST%" set "INSTALL=1"
+if not "%REST:r=%"=="%REST%" set "RELEASE=1"
+if not "%REST:h=%"=="%REST%" set "HELP=1"
+if defined REST set "REST=%REST:c=%"
+if defined REST set "REST=%REST:i=%"
+if defined REST set "REST=%REST:r=%"
+if defined REST set "REST=%REST:h=%"
+if defined REST set "BAD=1"
+exit /b 0
+
+:findnpp
 set "DEST="
 if defined NPP_DIR if exist "%NPP_DIR%\notepad++.exe" set "DEST=%NPP_DIR%"
 if not defined DEST if exist "%ProgramFiles%\Notepad++\notepad++.exe" set "DEST=%ProgramFiles%\Notepad++"
 if not defined DEST if exist "%ProgramFiles(x86)%\Notepad++\notepad++.exe" set "DEST=%ProgramFiles(x86)%\Notepad++"
+exit /b 0
+
+:help
+call :findnpp
+echo Usage: build.bat [-c] [-i] [-r] [-h]
+echo   -c  clean: delete previous build output first
+if defined DEST echo   -i  install: copy the build to %DEST%\plugins\SuperMarkdown++
+if not defined DEST echo   -i  install: copy the build to Notepad++\plugins\SuperMarkdown++ (Notepad++ not found, set NPP_DIR)
+echo   -r  release: package the build into release\
+echo   -h  show this help
+echo Build output: %ROOT%%OUT%
+echo Release:      %ROOT%release
+exit /b 0
+
+:install
+call :findnpp
 if not defined DEST (echo ERROR: Notepad++ not found. Set NPP_DIR to its folder.& exit /b 1)
 tasklist /fi "imagename eq notepad++.exe" 2>nul | find /i "notepad++.exe" >nul && (echo ERROR: Notepad++ is running. Close it first.& exit /b 1)
 xcopy "%OUT%\*" "%DEST%\plugins\SuperMarkdown++\" /E /Y /I /Q >nul || (echo ERROR: copy to Notepad++ failed. Run as administrator.& exit /b 1)
@@ -70,6 +102,3 @@ rmdir /s /q "%STAGE%"
 powershell -NoLogo -NoProfile -Command "$h = (Get-FileHash -Algorithm SHA256 -LiteralPath 'release\%ZIP%').Hash.ToLower(); Set-Content -NoNewline -Encoding ascii -Path 'release\SHA256SUMS.txt' -Value ($h + '  %ZIP%' + [char]10)" || exit /b 1
 echo Created release\%ZIP% and release\SHA256SUMS.txt
 exit /b 0
-
-:badflags
-echo ERROR: usage: build.bat [-cir]& exit /b 1

@@ -110,9 +110,9 @@ __CSS__
       w.appendChild(b);
     });
   }
-  function render() {
+  function render(top) {
     var c = document.getElementById('c');
-    var y = window.scrollY;
+    var y = top ? 0 : window.scrollY;
     c.innerHTML = lastHtml;
     highlight(c);
     if (document.documentElement.getAttribute('data-style') === 'forgejo') decorate(c);
@@ -120,10 +120,17 @@ __CSS__
     document.getElementById('file').setAttribute('data-head', lastName ? '1' : '0');
     window.scrollTo(0, y);
   }
-  window.setContent = function (html, name) {
+  function goTo(id) {
+    try { id = decodeURIComponent(id); } catch (_) {}
+    var t = document.getElementById(id) || document.getElementsByName(id)[0];
+    if (t) t.scrollIntoView();
+  }
+  window.goTo = goTo;
+  window.setContent = function (html, name, top, anchor) {
     lastHtml = html;
     lastName = name || '';
-    render();
+    render(top);
+    if (anchor) goTo(anchor);
   };
   window.setKeys = function (k) { keys = k; };
   var HL = {
@@ -171,13 +178,15 @@ __CSS__
     var a = e.target.closest ? e.target.closest('a[href]') : null;
     if (!a) return;
     var h = a.getAttribute('href');
-    if (h && h.charAt(0) === '#') {
+    if (!h) return;
+    if (h.charAt(0) === '#') {
       e.preventDefault();
-      var id = h.slice(1);
-      try { id = decodeURIComponent(id); } catch (_) {}
-      var t = document.getElementById(id) || document.getElementsByName(id)[0];
-      if (t) t.scrollIntoView();
+      goTo(h.slice(1));
+      return;
     }
+    if (/^[a-z][a-z0-9+.\-]*:/i.test(h) || h.charAt(0) === '/') return;
+    e.preventDefault();
+    window.chrome.webview.postMessage('open:' + h);
   });
   // The web view swallows keystrokes, so the plugin shortcuts are matched here and sent to the host.
   document.addEventListener('keydown', function (e) {

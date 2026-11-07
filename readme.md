@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="showcase.png" alt=""/>
+</p>
+
 # SuperMarkdown++
 
 Plugin for Notepad++
@@ -46,7 +50,9 @@ GitLab and Forgejo are approximations built from their public stylesheets. They 
 
 ## Notes
 - Code highlighting loads highlight.js from cdnjs; offline, code blocks render unhighlighted.
-- Relative images resolve against the file's folder. External links open in the default browser.
+- Relative images resolve against the file's folder.
+- Relative links (`[MIT](LICENSE.md)`, `docs/guide.md#usage`, `../readme.md`) open the file in Notepad++, and the viewer renders it when it is Markdown. Files are opened, never run. `#anchor` links scroll in place.
+- External links open in the default browser.
 - Only `.md/.markdown/.mdown/.mkd/.mkdn/.mdx/.rmd` and unsaved tabs are rendered. On other files the panel hides itself and returns on the next Markdown tab.
 
 # Building
@@ -58,19 +64,20 @@ GitLab and Forgejo are approximations built from their public stylesheets. They 
 
 ## Build script
 ```
-build.bat [-cir]
+build.bat [-c] [-i] [-r] [-h]
 ```
 | Flag | Action |
 | --- | --- |
 | `-c` | Clean: delete `bin` and `obj` first |
 | `-i` | Install: copy the build into `Notepad++\plugins\SuperMarkdown++` (Notepad++ must be closed) |
 | `-r` | Release: create `release\SuperMarkdown-vX.Y.Z-x64.zip` and `release\SHA256SUMS.txt` |
+| `-h` | Help: list the flags and the resolved build output, install and release paths, then exit without building |
 
-Flags combine, e.g. `build.bat -cir`. No flags builds only.
+Flags combine in any order, e.g. `build.bat -cir`. The build always runs; `-h` overrides everything else. No flags builds only.
 `-i` looks in `%NPP_DIR%`, `%ProgramFiles%\Notepad++` and `%ProgramFiles(x86)%\Notepad++`. Run it as administrator when Notepad++ is under Program Files.
 Build output: `bin\Release\net8.0-windows\`. The version comes from `<Version>` in `SuperMarkdown++.csproj`. The zip contains `plugins\SuperMarkdown++\` (folder name must equal the DLL name, `SuperMarkdown++`).
 
 # License
-MIT
+[MIT](LICENSE.md)
 
 Third-party: Markdig (BSD-2-Clause), Microsoft.Web.WebView2

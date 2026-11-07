@@ -43,6 +43,7 @@ namespace SuperMarkdown
         public const uint NPPM_DMMHIDE = NPPMSG + 31;
         public const uint NPPM_DMMREGASDCKDLG = NPPMSG + 33;
         public const uint NPPM_SETMENUITEMCHECK = NPPMSG + 40;
+        public const uint NPPM_DOOPEN = NPPMSG + 77;
         public const uint NPPM_GETFULLCURRENTPATH = WM_USER + 3000 + 1;
 
         public const uint NPPN_READY = 1001;
@@ -78,6 +79,9 @@ namespace SuperMarkdown
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         public static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, StringBuilder lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, string lParam);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]

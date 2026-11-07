@@ -21,11 +21,13 @@ namespace SuperMarkdown
         string style, theme;
         string html = "";
         string name, keys = "[]";
-        string dir, mappedDir;
+        string dir, mappedDir, fragment;
+        bool top;
 
         public event Action BecameVisible;
         public event Action BecameHidden;
         public event Action<int> Command;
+        public event Action<string> Link;
 
         public SuperMarkdownPanel(string style, string theme)
         {
@@ -73,17 +75,25 @@ namespace SuperMarkdown
             }
         }
 
-        public void Render(string bodyHtml, string baseDir, string fileName)
+        public void Render(string bodyHtml, string baseDir, string fileName, string anchor)
         {
+            if (baseDir != dir || fileName != name) top = true;
             html = bodyHtml;
             dir = baseDir;
             name = fileName;
+            fragment = anchor;
             Push();
         }
 
         public void ShowMessage(string message)
         {
-            Render("<p class=\"msg\">" + WebUtility.HtmlEncode(message) + "</p>", null, null);
+            Render("<p class=\"msg\">" + WebUtility.HtmlEncode(message) + "</p>", null, null, null);
+        }
+
+        public void ScrollTo(string anchor)
+        {
+            if (!ready) return;
+            try { web.CoreWebView2.ExecuteScriptAsync("goTo(" + JsonSerializer.Serialize(anchor) + ")"); } catch { }
         }
 
         // JSON array of [ctrl, alt, shift, virtual key, menu index]; lets the page run the same shortcuts while it has focus.
@@ -125,7 +135,9 @@ namespace SuperMarkdown
                         cw.SetVirtualHostNameToFolderMapping(Host, dir, CoreWebView2HostResourceAccessKind.Allow);
                     mappedDir = dir;
                 }
-                cw.ExecuteScriptAsync("setContent(" + JsonSerializer.Serialize(html) + "," + JsonSerializer.Serialize(name) + ")");
+                cw.ExecuteScriptAsync("setContent(" + JsonSerializer.Serialize(html) + "," + JsonSerializer.Serialize(name) + "," + (top ? "true" : "false") + "," + JsonSerializer.Serialize(fragment) + ")");
+                top = false;
+                fragment = null;
             }
             catch { }
         }
@@ -141,15 +153,25 @@ namespace SuperMarkdown
 
         void OnWebMessage(object sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
-            int index;
+            string message;
             try
             {
-                if (!int.TryParse(e.TryGetWebMessageAsString(), out index)) return;
+                message = e.TryGetWebMessageAsString();
             }
             catch
             {
                 return;
             }
+
+            if (message != null && message.StartsWith("open:", StringComparison.Ordinal))
+            {
+                Action<string> l = Link;
+                if (l != null) l(message.Substring(5));
+                return;
+            }
+
+            int index;
+            if (!int.TryParse(message, out index)) return;
 
             Action<int> h = Command;
             if (h != null) h(index);
@@ -174,7 +196,7 @@ namespace SuperMarkdown
         {
             Uri u;
             if (!Uri.TryCreate(uri, UriKind.Absolute, out u)) return;
-            if (u.Host.Equals(Host, StringComparison.OrdinalIgnoreCase)) return; // local relative links: ignored
+            if (u.Host.Equals(Host, StringComparison.OrdinalIgnoreCase)) return; // root-relative local links: ignored
 
             if (u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps || u.Scheme == Uri.UriSchemeMailto)
             {
