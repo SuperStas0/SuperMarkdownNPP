@@ -32,15 +32,16 @@ namespace SuperMarkdown
         static int lastCmdTick;
 
         // Kept in static fields so the GC never collects the native thunks.
-        // A null callback makes Notepad++ draw a separator. The mode items start at ModeFirst (Modes.Names order), the style items at StyleFirst (Styles.Names order).
-        const int ModeFirst = 2;
-        const int StyleFirst = 9;
-        static readonly PluginFunc[] callbacks = { ToggleCommand, null, HiddenCommand, SidebarCommand, ReplaceCommand, null, ThemeCommand, NextStyleCommand, null, StyleGitHubCommand, StyleGitLabCommand, StyleForgejoCommand };
-        static readonly string[] menuNames = { "Toggle SuperMarkdown++", "-", "Hidden", "Sidebar", "Replace Editor", "-", "Toggle Light/Dark Theme", "Next Style", "-", "GitHub Style", "GitLab Style", "Forgejo Style" };
+        // A null callback makes Notepad++ draw a separator. The mode, theme and style items start at ModeFirst, ThemeFirst and StyleFirst, in Modes.Names, Themes.Names and Styles.Names order.
+        const int ModeFirst = 5;
+        const int ThemeFirst = 9;
+        const int StyleFirst = 12;
+        static readonly PluginFunc[] callbacks = { ToggleCommand, CycleModeCommand, CycleThemeCommand, CycleStyleCommand, null, HiddenCommand, SidebarCommand, ReplaceCommand, null, DarkCommand, LightCommand, null, StyleGitHubCommand, StyleGitLabCommand, StyleForgejoCommand };
+        static readonly string[] menuNames = { "Toggle SuperMarkdown++", "Cycle Dock Mode", "Cycle Theme", "Cycle Style", "-", "Hidden", "Sidebar", "Replace Editor", "-", "Dark Theme", "Light Theme", "-", "GitHub Style", "GitLab Style", "Forgejo Style" };
 
-        // ShortcutKey: bool _isCtrl, _isAlt, _isShift; UCHAR _key. Ctrl+Shift+M for the toggle.
-        // Ctrl+Alt+Shift + Left/Right/Up/Down/PageDown for the rest: Ctrl+Shift+arrows are Notepad++'s own move-line and select-word keys.
-        static readonly byte[][] shortcuts = { new byte[] { 1, 0, 1, 0x4D }, null, new byte[] { 1, 1, 1, 0x25 }, new byte[] { 1, 1, 1, 0x27 }, new byte[] { 1, 1, 1, 0x26 }, null, new byte[] { 1, 1, 1, 0x28 }, new byte[] { 1, 1, 1, 0x22 }, null, null, null, null };
+        // ShortcutKey: bool _isCtrl, _isAlt, _isShift; UCHAR _key. Ctrl+Alt+Shift + Down/Up/Left/Right for toggle/dock mode/theme/style.
+        // Ctrl+Shift+arrows are Notepad++'s own move-line and select-word keys.
+        static readonly byte[][] shortcuts = { new byte[] { 1, 1, 1, 0x28 }, new byte[] { 1, 1, 1, 0x26 }, new byte[] { 1, 1, 1, 0x25 }, new byte[] { 1, 1, 1, 0x27 }, null, null, null, null, null, null, null, null, null, null, null };
 
         // ---- exports -------------------------------------------------------
 
@@ -133,6 +134,9 @@ namespace SuperMarkdown
                 if (i >= ModeFirst && i - ModeFirst == Array.IndexOf(Modes.Names, mode))
                     Marshal.WriteByte(item, chkOff, 1);
 
+                if (i >= ThemeFirst && i - ThemeFirst == Array.IndexOf(Themes.Names, theme))
+                    Marshal.WriteByte(item, chkOff, 1);
+
                 if (i >= StyleFirst && i - StyleFirst == Styles.IndexOf(style))
                     Marshal.WriteByte(item, chkOff, 1);
 
@@ -209,23 +213,44 @@ namespace SuperMarkdown
             }
         }
 
-        static void ThemeCommand()
+        static void CycleModeCommand()
         {
-            try
-            {
-                if (Repeat("theme")) return;
-                theme = theme == "dark" ? "light" : "dark";
-                Settings.SaveTheme(theme);
-                if (panel != null) panel.SetLook(style, theme);
-                if (overlay != null) overlay.Panel.SetLook(style, theme);
-            }
-            catch { }
+            if (Repeat("mode")) return;
+            SetMode(Modes.Names[(Array.IndexOf(Modes.Names, mode) + 1) % Modes.Names.Length]);
         }
 
-        static void NextStyleCommand()
+        static void CycleThemeCommand()
+        {
+            if (Repeat("theme")) return;
+            SetTheme(Themes.Names[(Array.IndexOf(Themes.Names, theme) + 1) % Themes.Names.Length]);
+        }
+
+        static void CycleStyleCommand()
         {
             if (Repeat("style")) return;
             SetStyle(Styles.Names[(Styles.IndexOf(style) + 1) % Styles.Names.Length]);
+        }
+
+        static void DarkCommand() { SetTheme("dark"); }
+
+        static void LightCommand() { SetTheme("light"); }
+
+        static void SetTheme(string t)
+        {
+            try
+            {
+                theme = t == "light" ? "light" : "dark";
+                Settings.SaveTheme(theme);
+                if (panel != null) panel.SetLook(style, theme);
+                if (overlay != null) overlay.Panel.SetLook(style, theme);
+
+                for (int k = 0; k < Themes.Names.Length; k++)
+                {
+                    int id = Marshal.ReadInt32(funcs, (ThemeFirst + k) * funcSize + cmdOffset);
+                    Native.SendMessage(npp, Native.NPPM_SETMENUITEMCHECK, (IntPtr)id, (IntPtr)(Themes.Names[k] == theme ? 1 : 0));
+                }
+            }
+            catch { }
         }
 
         static void StyleGitHubCommand() { SetStyle("github"); }

@@ -8,7 +8,7 @@ namespace SuperMarkdown
         readonly SuperMarkdownPanel panel;
         readonly SciHook hook = new SciHook();
         IntPtr host;
-        bool shown;
+        bool shown, stripped, vBar, hBar;
 
         public Overlay(SuperMarkdownPanel panel)
         {
@@ -34,6 +34,7 @@ namespace SuperMarkdown
                 IntPtr h = panel.Handle;
                 if (host != sci)
                 {
+                    Restore();
                     Native.ShowWindow(h, Native.SW_HIDE); // no flash at the default size while re-parenting
                     hook.ReleaseHandle();
 
@@ -45,6 +46,7 @@ namespace SuperMarkdown
                     hook.AssignHandle(sci);
                     host = sci;
                 }
+                Strip();
                 shown = true;
                 Fit();
             }
@@ -55,7 +57,27 @@ namespace SuperMarkdown
         {
             if (!shown) return;
             shown = false;
+            Restore();
             Native.ShowWindow(panel.Handle, Native.SW_HIDE);
+        }
+
+        // The editor's own scrollbars sit outside its client area, so the overlay cannot cover them.
+        void Strip()
+        {
+            if (stripped) return;
+            vBar = Native.SendMessage(host, Native.SCI_GETVSCROLLBAR, IntPtr.Zero, IntPtr.Zero) != IntPtr.Zero;
+            hBar = Native.SendMessage(host, Native.SCI_GETHSCROLLBAR, IntPtr.Zero, IntPtr.Zero) != IntPtr.Zero;
+            Native.SendMessage(host, Native.SCI_SETVSCROLLBAR, IntPtr.Zero, IntPtr.Zero);
+            Native.SendMessage(host, Native.SCI_SETHSCROLLBAR, IntPtr.Zero, IntPtr.Zero);
+            stripped = true;
+        }
+
+        void Restore()
+        {
+            if (!stripped) return;
+            stripped = false;
+            Native.SendMessage(host, Native.SCI_SETVSCROLLBAR, (IntPtr)(vBar ? 1 : 0), IntPtr.Zero);
+            Native.SendMessage(host, Native.SCI_SETHSCROLLBAR, (IntPtr)(hBar ? 1 : 0), IntPtr.Zero);
         }
 
         void Fit()

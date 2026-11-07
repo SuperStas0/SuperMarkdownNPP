@@ -4,7 +4,7 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>SuperMarkdown</AssemblyName>
-    <Version>1.2.1</Version>
+    <Version>1.3.0</Version>
     <RootNamespace>SuperMarkdown</RootNamespace>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>

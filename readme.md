@@ -12,11 +12,13 @@ Plugins > SuperMarkdown++:
 
 | Item | Action |
 | --- | --- |
-| Toggle SuperMarkdown++ | Hide, or show again in the last used mode (`Ctrl+Shift+M`) |
-| Hidden / Sidebar / Replace Editor | Switch the view mode (`Ctrl+Alt+Shift+Left` / `Right` / `Up`) |
-| Toggle Light/Dark Theme | Switch between dark and light (`Ctrl+Alt+Shift+Down`) |
-| Next Style | Cycle GitHub, GitLab, Forgejo (`Ctrl+Alt+Shift+PageDown`) |
-| GitHub Style / GitLab Style / Forgejo Style | Switch the rendering style (the active one is checked) |
+| Toggle SuperMarkdown++ | Hide, or show again in the last used dock mode (`Ctrl+Alt+Shift+Down`) |
+| Cycle Dock Mode | Hidden, Sidebar, Replace Editor (`Ctrl+Alt+Shift+Up`) |
+| Cycle Theme | Dark, Light (`Ctrl+Alt+Shift+Left`) |
+| Cycle Style | GitHub, GitLab, Forgejo (`Ctrl+Alt+Shift+Right`) |
+| Hidden / Sidebar / Replace Editor | Set the dock mode (the active one is checked) |
+| Dark Theme / Light Theme | Set the theme (the active one is checked) |
+| GitHub Style / GitLab Style / Forgejo Style | Set the rendering style (the active one is checked) |
 
 Shortcuts are changeable in Settings > Shortcut Mapper > Plugin commands. They also work while the viewer has focus, with the default keys only. `Ctrl+Shift+arrows` are not used: Notepad++ uses them for moving lines and selecting words.
 
@@ -27,7 +29,7 @@ Mode, theme and style apply instantly and are remembered in `%LOCALAPPDATA%\Supe
 | --- | --- |
 | Hidden | Editor only |
 | Sidebar | Docked panel, can be dragged to any side |
-| Replace Editor | Viewer covers the text of the active view. The tab bar stays usable. Switch to Hidden or Sidebar to edit |
+| Replace Editor | Viewer covers the text of the active view and its scrollbars are hidden. The tab bar stays usable. Switch to Hidden or Sidebar to edit |
 
 ## Styles
 | Style | Notes |

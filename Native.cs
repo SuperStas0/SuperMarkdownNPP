@@ -56,6 +56,10 @@ namespace SuperMarkdown
         public const uint SCI_GETLENGTH = 2006;
         public const uint SCI_GETCODEPAGE = 2137;
         public const uint SCI_GETTEXT = 2182;
+        public const uint SCI_SETHSCROLLBAR = 2130;
+        public const uint SCI_GETHSCROLLBAR = 2131;
+        public const uint SCI_SETVSCROLLBAR = 2280;
+        public const uint SCI_GETVSCROLLBAR = 2281;
 
         public const uint DWS_DF_CONT_RIGHT = 1u << 28;
 
