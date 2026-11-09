@@ -7,6 +7,7 @@ set "OUT=bin\Release\net8.0-windows"
 set "CLEAN="
 set "INSTALL="
 set "RELEASE="
+set "NOBUILD="
 set "HELP="
 set "BAD="
 
@@ -19,6 +20,9 @@ goto args
 
 if defined HELP goto help
 if defined BAD (echo ERROR: unknown flag. Run build.bat -h for usage.& exit /b 1)
+if defined NOBUILD if defined CLEAN (echo ERROR: -n cannot be combined with -c.& exit /b 1)
+if defined NOBUILD if not defined INSTALL if not defined RELEASE (echo ERROR: -n needs -i and/or -r.& exit /b 1)
+if defined NOBUILD goto havebuild
 
 where gcc >nul 2>&1 && goto havegcc
 for %%D in ("%W64DEVKIT%" "C:\w64devkit" "%USERPROFILE%\w64devkit" "%USERPROFILE%\Downloads\w64devkit" "%USERPROFILE%\Desktop\w64devkit") do if exist "%%~D\bin\gcc.exe" set "PATH=%%~D\bin;%PATH%"
@@ -39,7 +43,13 @@ dotnet build -c Release -nologo || exit /b 1
 if not exist "%OUT%\SuperMarkdown.dll" (echo ERROR: SuperMarkdown.dll was not produced.& exit /b 1)
 gcc -shared -O2 -s -o "%OUT%\SuperMarkdown++.dll" shim\shim.c -ladvapi32 -luser32 || exit /b 1
 echo Built %OUT%\SuperMarkdown++.dll
+goto built
 
+:havebuild
+if not exist "%OUT%\SuperMarkdown.dll" (echo ERROR: no build output in %OUT%. Run build.bat without -n first.& exit /b 1)
+if not exist "%OUT%\SuperMarkdown++.dll" (echo ERROR: no build output in %OUT%. Run build.bat without -n first.& exit /b 1)
+
+:built
 if defined INSTALL call :install || exit /b 1
 if defined RELEASE call :release || exit /b 1
 exit /b 0
@@ -52,10 +62,12 @@ if not defined REST set "REST=?"
 if not "%REST:c=%"=="%REST%" set "CLEAN=1"
 if not "%REST:i=%"=="%REST%" set "INSTALL=1"
 if not "%REST:r=%"=="%REST%" set "RELEASE=1"
+if not "%REST:n=%"=="%REST%" set "NOBUILD=1"
 if not "%REST:h=%"=="%REST%" set "HELP=1"
 if defined REST set "REST=%REST:c=%"
 if defined REST set "REST=%REST:i=%"
 if defined REST set "REST=%REST:r=%"
+if defined REST set "REST=%REST:n=%"
 if defined REST set "REST=%REST:h=%"
 if defined REST set "BAD=1"
 exit /b 0
@@ -69,11 +81,12 @@ exit /b 0
 
 :help
 call :findnpp
-echo Usage: build.bat [-c] [-i] [-r] [-h]
+echo Usage: build.bat [-c] [-i] [-r] [-n] [-h]
 echo   -c  clean: delete previous build output first
 if defined DEST echo   -i  install: copy the build to %DEST%\plugins\SuperMarkdown++
 if not defined DEST echo   -i  install: copy the build to Notepad++\plugins\SuperMarkdown++ (Notepad++ not found, set NPP_DIR)
 echo   -r  release: package the build into release\
+echo   -n  nobuild: skip the build, reuse existing output (needs -i and/or -r, not with -c)
 echo   -h  show this help
 echo Build output: %ROOT%%OUT%
 echo Release:      %ROOT%release

@@ -8,9 +8,9 @@ namespace SuperMarkdown
     public static class Exports
     {
         [UnmanagedCallersOnly]
-        public static void SetInfo(NppData data)
+        public static void SetInfo(NppData nppData)
         {
-            try { Plugin.SetInfo(data); } catch { }
+            try { Plugin.SetInfo(nppData); } catch { }
         }
 
         [UnmanagedCallersOnly]

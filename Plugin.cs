@@ -44,13 +44,11 @@ namespace SuperMarkdown
         // Ctrl+Shift+arrows are Notepad++'s own move-line and select-word keys.
         static readonly byte[][] shortcuts = { new byte[] { 1, 1, 1, 0x28 }, new byte[] { 1, 1, 1, 0x26 }, new byte[] { 1, 1, 1, 0x25 }, new byte[] { 1, 1, 1, 0x27 }, null, null, null, null, null, null, null, null, null, null, null };
 
-        // ---- exports -------------------------------------------------------
-
-        internal static void SetInfo(NppData data)
+        internal static void SetInfo(NppData nppData)
         {
-            npp = data.NppHandle;
-            sci0 = data.ScintillaMainHandle;
-            sci1 = data.ScintillaSecondHandle;
+            npp = nppData.NppHandle;
+            sci0 = nppData.ScintillaMainHandle;
+            sci1 = nppData.ScintillaSecondHandle;
 
             // Notepad++ has no WinForms sync context; async/await in the panel needs one.
             SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
@@ -101,8 +99,6 @@ namespace SuperMarkdown
                     break;
             }
         }
-
-        // ---- menu ----------------------------------------------------------
 
         static int Align(int v, int a)
         {
@@ -316,8 +312,6 @@ namespace SuperMarkdown
             catch { }
         }
 
-        // ---- panel ---------------------------------------------------------
-
         static void RegisterPanel()
         {
             if (panel != null) return;
@@ -471,8 +465,6 @@ namespace SuperMarkdown
                 ActivePanel().ShowMessage("SuperMarkdown++ error: " + ex.Message);
             }
         }
-
-        // ---- Notepad++ / Scintilla access ----------------------------------
 
         static IntPtr CurrentScintilla()
         {

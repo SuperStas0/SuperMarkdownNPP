@@ -182,8 +182,6 @@ static int ensure(void)
     return 1;
 }
 
-/* ---- exports Notepad++ expects ---- */
-
 EXPORT BOOL isUnicode(void)
 {
     return TRUE;
@@ -194,9 +192,9 @@ EXPORT const wchar_t *getName(void)
     return L"SuperMarkdown++";
 }
 
-EXPORT void setInfo(NppData data)
+EXPORT void setInfo(NppData nppData)
 {
-    if (ensure()) p_setInfo(data);
+    if (ensure()) p_setInfo(nppData);
 }
 
 EXPORT void *getFuncsArray(int *nbF)
